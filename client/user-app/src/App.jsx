@@ -1,5 +1,7 @@
 // user-app/src/App.jsx
 // import "./App.css";
+//add the nessesary code to the const client function, make sure the Appolo client is working successfully 
+
 import UserComponent from "./UserComponent";
 import "bootstrap/dist/css/bootstrap.min.css";
 
