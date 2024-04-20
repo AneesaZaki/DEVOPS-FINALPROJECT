@@ -1,0 +1,84 @@
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+
+variables:
+  - group: your_variable_group_name
+
+stages:
+  - stage: Build
+    displayName: 'Build and Test'
+    jobs:
+      - job: Build
+        displayName: 'Build and Test'
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '14.x'
+            displayName: 'Install Node.js'
+
+          - script: |
+              npm install
+              npm run build
+            displayName: 'Install Dependencies and Build'
+
+          - task: PublishCodeCoverageResults@1
+            inputs:
+              codeCoverageTool: 'Cobertura'
+              summaryFileLocation: '$(System.DefaultWorkingDirectory)/coverage/cobertura-coverage.xml'
+              failIfCoverageEmpty: true
+            displayName: 'Publish Code Coverage Results'
+
+          - script: |
+              npm test
+            displayName: 'Run Tests'
+
+  - stage: DeployDev
+    displayName: 'Deploy to Development Environment'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - deployment: Deploy
+        displayName: 'Deploy to Development'
+        environment: 'development'
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureRmWebAppDeployment@4
+                  inputs:
+                    ConnectionType: 'AzureRM'
+                    azureSubscription: '<Azure Subscription>' # TODO::Replace with azure subscription name
+                    appType: 'webApp'
+                    WebAppName: '<Your Web App Name>' # TODO::Replace with name of azure web app
+                    packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
+                    enableCustomDeployment: true
+
+  - stage: DeployProd
+    displayName: 'Deploy to Production Environment'
+    dependsOn: Build
+    condition: succeeded()
+    jobs:
+      - deployment: Deploy
+        displayName: 'Deploy to Production'
+        environment: 'production'
+        pool:
+          vmImage: 'ubuntu-latest'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureRmWebAppDeployment@4
+                  inputs:
+                    ConnectionType: 'AzureRM'
+                    azureSubscription: '<Azure Subscription>' # TODO::Replace with azure subscription name
+                    appType: 'webApp'
+                    WebAppName: '<Your Web App Name>' # TODO::Replace with name of azure web app
+                    packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
+                    enableCustomDeployment: true
