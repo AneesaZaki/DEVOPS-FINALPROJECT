@@ -9,6 +9,8 @@ import session from "express-session";
 
 import config from "./config.js";
 
+//defined the instance and configuration method 
+
 // Define the Express configuration method
 function configureExpress() {
   // Create a new Express application instance
